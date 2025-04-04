@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load catalog_extras %}
+
+{% block title %}
+    {% if product %}Ürün Düzenle{% else %}Yeni Ürün{% endif %} - Dijital Katalog
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="list-group shadow">
+                <a href="{% url 'dashboard' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-tachometer-alt me-2"></i> Panel
+                </a>
+                <a href="{% url 'update_profile' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-user me-2"></i> Profil
+                </a>
+                <a href="{% url 'update_company' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-building me-2"></i> Firma Bilgileri
+                </a>
+                <a href="{% url 'catalog:category_list' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-tags me-2"></i> Kategoriler
+                </a>
+                <a href="{% url 'catalog:product_list' %}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-box me-2"></i> Ürünler
+                </a>
+                <a href="{% url 'catalog:company_catalog' company.slug %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-eye me-2"></i> Kataloğu Görüntüle
+                </a>
+                <a href="{% url 'catalog:generate_qr' company.slug %}" class="list-group-item list-group-item-action" target="_blank">
+                    <i class="fas fa-qrcode me-2"></i> QR Kodu
+                </a>
+                <a href="{% url 'logout' %}" class="list-group-item list-group-item-action text-danger">
+                    <i class="fas fa-sign-out-alt me-2"></i> Çıkış Yap
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        {% if product %}
+                            Ürün Düzenle: {{ product.name }}
+                        {% else %}
+                            Yeni Ürün Oluştur
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <h5>Temel Bilgiler</h5>
+                                <hr>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Ürün Adı</label>
+                                <input type="text" class="form-control" id="name" name="name" required
+                                       {% if product %}value="{{ product.name }}"{% endif %}>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="category" class="form-label">Kategori</label>
+                                <select class="form-select" id="category" name="category" required>
+                                    {% for category in categories %}
+                                        <option value="{{ category.id }}"
+                                                {% if product and product.category.id == category.id %}selected{% endif %}>
+                                            {{ category.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-12 mb-3">
+                                <label for="description" class="form-label">Açıklama</label>
+                                <textarea class="form-control" id="description" name="description" rows="3">{% if product %}{{ product.description }}{% endif %}</textarea>
+                            </div>
+                            
+                            <div class="col-md-12 mb-3">
+                                <label for="images" class="form-label">Ürün Resimleri</label>
+                                <input type="file" class="form-control" id="images" name="images" accept="image/*" multiple
+                                       {% if not product %}required{% endif %}>
+                                <div class="form-text">Birden fazla resim seçebilirsiniz. İlk resim ana resim olarak kullanılacaktır.</div>
+                                
+                                {% if product and product_images %}
+                                    <div class="mt-3">
+                                        <h6>Mevcut Resimler</h6>
+                                        <div class="row">
+                                            {% for image in product_images %}
+                                                <div class="col-md-3 mb-3">
+                                                    <div class="card h-100 {% if image.is_primary %}border-primary{% endif %}">
+                                                        <img src="{{ image.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 150px; object-fit: cover;">
+                                                        <div class="card-body p-2 d-flex gap-1 justify-content-center">
+                                                            {% if image.is_primary %}
+                                                                <span class="badge bg-primary">Ana Resim</span>
+                                                            {% else %}
+                                                                <a href="{% url 'catalog:set_primary_image' image.id %}" class="btn btn-sm btn-outline-primary" title="Ana Resim Yap">
+                                                                    <i class="fas fa-star"></i>
+                                                                </a>
+                                                            {% endif %}
+                                                            <a href="{% url 'catalog:product_image_delete' image.id %}" class="btn btn-sm btn-outline-danger" title="Resmi Sil">
+                                                                <i class="fas fa-trash"></i>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-12 mb-3 mt-4">
+                                <h5>Fiyat ve Stok Bilgileri</h5>
+                                <hr>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="price" class="form-label">Fiyat (₺)</label>
+                                <input type="number" class="form-control" id="price" name="price" step="0.01"
+                                       {% if product and product.price %}value="{{ product.price }}"{% endif %}>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="discount_price" class="form-label">İndirimli Fiyat (₺)</label>
+                                <input type="number" class="form-control" id="discount_price" name="discount_price" step="0.01"
+                                       {% if product and product.discount_price %}value="{{ product.discount_price }}"{% endif %}>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="stock" class="form-label">Stok Miktarı</label>
+                                <input type="number" class="form-control" id="stock" name="stock"
+                                       {% if product and product.stock %}value="{{ product.stock }}"{% endif %}>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3 d-flex align-items-end">
+                                <div class="form-check me-4">
+                                    <input class="form-check-input" type="checkbox" id="show_price" name="show_price"
+                                           {% if product and product.show_price %}checked{% elif not product %}checked{% endif %}>
+                                    <label class="form-check-label" for="show_price">
+                                        Fiyatı Göster
+                                    </label>
+                                </div>
+                                <div class="form-check me-4">
+                                    <input class="form-check-input" type="checkbox" id="show_stock" name="show_stock"
+                                           {% if product and product.show_stock %}checked{% endif %}>
+                                    <label class="form-check-label" for="show_stock">
+                                        Stok Göster
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="featured" name="featured"
+                                           {% if product and product.featured %}checked{% endif %}>
+                                    <label class="form-check-label" for="featured">
+                                        Öne Çıkan
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            {% if features %}
+                                <div class="col-md-12 mb-3 mt-4">
+                                    <h5>Ürün Özellikleri</h5>
+                                    <hr>
+                                </div>
+                                
+                                {% for feature in features %}
+                                    <div class="col-md-6 mb-3">
+                                        <label for="feature_{{ feature.id }}" class="form-label">{{ feature.name }}</label>
+                                        <input type="text" class="form-control" id="feature_{{ feature.id }}" name="feature_{{ feature.id }}"
+                                               {% if product and feature.id in feature_values %}value="{{ feature_values|get_item:feature.id }}"{% endif %}>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="text-end mt-4">
+                            <a href="{% url 'catalog:product_list' %}" class="btn btn-secondary">İptal</a>
+                            <button type="submit" class="btn btn-primary">
+                                {% if product %}
+                                    <i class="fas fa-save me-1"></i> Değişiklikleri Kaydet
+                                {% else %}
+                                    <i class="fas fa-plus-circle me-1"></i> Ürün Oluştur
+                                {% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Fiyat indirim kontrolü
+    document.addEventListener('DOMContentLoaded', function() {
+        const priceInput = document.getElementById('price');
+        const discountPriceInput = document.getElementById('discount_price');
+        
+        discountPriceInput.addEventListener('change', function() {
+            const price = parseFloat(priceInput.value) || 0;
+            const discountPrice = parseFloat(discountPriceInput.value) || 0;
+            
+            if (discountPrice >= price && price > 0) {
+                alert('İndirimli fiyat, normal fiyattan düşük olmalıdır!');
+                discountPriceInput.value = '';
+            }
+        });
+    });
+</script>
+{% endblock %} 

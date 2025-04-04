@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Profili Güncelle - Dijital Katalog{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="list-group shadow">
+                <a href="{% url 'dashboard' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-tachometer-alt me-2"></i> Panel
+                </a>
+                <a href="{% url 'update_profile' %}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-user me-2"></i> Profil
+                </a>
+                {% if user.company %}
+                    <a href="{% url 'update_company' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-building me-2"></i> Firma Bilgileri
+                    </a>
+                    <a href="{% url 'catalog:category_list' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tags me-2"></i> Kategoriler
+                    </a>
+                    <a href="{% url 'catalog:product_list' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-box me-2"></i> Ürünler
+                    </a>
+                    <a href="{% url 'catalog:company_catalog' user.company.slug %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-eye me-2"></i> Kataloğu Görüntüle
+                    </a>
+                    <a href="{% url 'catalog:generate_qr' user.company.slug %}" class="list-group-item list-group-item-action" target="_blank">
+                        <i class="fas fa-qrcode me-2"></i> QR Kodu
+                    </a>
+                {% else %}
+                    <a href="{% url 'create_company' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-plus-circle me-2"></i> Firma Oluştur
+                    </a>
+                {% endif %}
+                <a href="{% url 'logout' %}" class="list-group-item list-group-item-action text-danger">
+                    <i class="fas fa-sign-out-alt me-2"></i> Çıkış Yap
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Profil Bilgileri</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.first_name|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.last_name|as_crispy_field }}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                {{ form.email|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.phone|as_crispy_field }}
+                            </div>
+                            
+                            <div class="col-md-12">
+                                {{ form.profile_image|as_crispy_field }}
+                                {% if user.profile.profile_image %}
+                                    <div class="mb-3">
+                                        <p>Mevcut Profil Resmi:</p>
+                                        <img src="{{ user.profile.profile_image.url }}" alt="Profil Resmi" class="img-thumbnail" style="max-height: 150px;">
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="text-end mt-4">
+                            <a href="{% url 'dashboard' %}" class="btn btn-secondary">İptal</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Değişiklikleri Kaydet
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

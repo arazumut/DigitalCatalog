@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block title %}Dijital Katalog - Ana Sayfa{% endblock %}
+
+{% block content %}
+<section class="hero-section">
+    <div class="container text-center">
+        <h1 class="display-4">Dijital Katalog</h1>
+        <p class="lead">Ürünlerinizi dijital ortamda tanıtın, QR kod ile müşterilerinize ulaşın!</p>
+        {% if not user.is_authenticated %}
+            <div class="mt-4">
+                <a href="{% url 'register' %}" class="btn btn-light me-2">Hemen Kaydol</a>
+                <a href="{% url 'login' %}" class="btn btn-outline-light">Giriş Yap</a>
+            </div>
+        {% else %}
+            <div class="mt-4">
+                <a href="{% url 'dashboard' %}" class="btn btn-light">Panele Git</a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <h2 class="text-center mb-5">Nasıl Çalışır?</h2>
+        <div class="row">
+            <div class="col-md-4 text-center mb-4">
+                <div class="rounded-circle bg-primary text-white d-inline-flex justify-content-center align-items-center mb-3" style="width: 80px; height: 80px;">
+                    <i class="fas fa-user-plus fa-2x"></i>
+                </div>
+                <h4>Kaydol</h4>
+                <p>Hızlıca ücretsiz hesap oluşturun ve firmanızı tanımlayın.</p>
+            </div>
+            <div class="col-md-4 text-center mb-4">
+                <div class="rounded-circle bg-primary text-white d-inline-flex justify-content-center align-items-center mb-3" style="width: 80px; height: 80px;">
+                    <i class="fas fa-upload fa-2x"></i>
+                </div>
+                <h4>Ürünlerini Yükle</h4>
+                <p>Kategoriler oluşturun ve ürünlerinizi ekleyin.</p>
+            </div>
+            <div class="col-md-4 text-center mb-4">
+                <div class="rounded-circle bg-primary text-white d-inline-flex justify-content-center align-items-center mb-3" style="width: 80px; height: 80px;">
+                    <i class="fas fa-qrcode fa-2x"></i>
+                </div>
+                <h4>QR Kodu Paylaş</h4>
+                <p>Otomatik oluşturulan QR kodunuzu müşterilerinizle paylaşın.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% if featured_companies %}
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center mb-5">Öne Çıkan Firmalar</h2>
+        <div class="row">
+            {% for company in featured_companies %}
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        {% if company.logo %}
+                            <img src="{{ company.logo.url }}" class="card-img-top p-3" alt="{{ company.name }}" style="height: 200px; object-fit: contain;">
+                        {% else %}
+                            <div class="card-img-top bg-light d-flex justify-content-center align-items-center" style="height: 200px;">
+                                <i class="fas fa-building fa-4x text-muted"></i>
+                            </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ company.name }}</h5>
+                            <p class="card-text">
+                                {% if company.sector %}
+                                    <span class="badge bg-primary">{{ company.sector.name }}</span>
+                                {% endif %}
+                            </p>
+                            <p class="card-text">{{ company.description|truncatewords:20 }}</p>
+                            <a href="{% url 'catalog:company_catalog' company.slug %}" class="btn btn-primary">Kataloğu Görüntüle</a>
+                        </div>
+                    </div>
+                </div>
+                {% if forloop.counter|divisibleby:3 and not forloop.last %}
+                    </div><div class="row mt-4">
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if sectors %}
+<section class="py-5">
+    <div class="container">
+        <h2 class="text-center mb-5">Sektörler</h2>
+        <div class="row justify-content-center">
+            {% for sector in sectors %}
+                <div class="col-md-3 col-6 mb-4">
+                    <div class="card text-center h-100">
+                        <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                            <i class="fas fa-industry fa-3x mb-3 text-primary"></i>
+                            <h5 class="card-title">{{ sector.name }}</h5>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<section class="py-5 bg-primary text-white text-center">
+    <div class="container">
+        <h2 class="mb-3">Hemen Başlayın!</h2>
+        <p class="lead mb-4">Firmanızı bir dakikada dijital ortama taşıyın.</p>
+        {% if not user.is_authenticated %}
+            <a href="{% url 'register' %}" class="btn btn-light btn-lg">Ücretsiz Kaydolun</a>
+        {% else %}
+            <a href="{% url 'dashboard' %}" class="btn btn-light btn-lg">Panele Git</a>
+        {% endif %}
+    </div>
+</section>
+{% endblock %} 

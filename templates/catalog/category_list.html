@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Kategoriler - Dijital Katalog{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="list-group shadow">
+                <a href="{% url 'dashboard' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-tachometer-alt me-2"></i> Panel
+                </a>
+                <a href="{% url 'update_profile' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-user me-2"></i> Profil
+                </a>
+                <a href="{% url 'update_company' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-building me-2"></i> Firma Bilgileri
+                </a>
+                <a href="{% url 'catalog:category_list' %}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-tags me-2"></i> Kategoriler
+                </a>
+                <a href="{% url 'catalog:product_list' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-box me-2"></i> Ürünler
+                </a>
+                <a href="{% url 'catalog:company_catalog' company.slug %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-eye me-2"></i> Kataloğu Görüntüle
+                </a>
+                <a href="{% url 'catalog:generate_qr' company.slug %}" class="list-group-item list-group-item-action" target="_blank">
+                    <i class="fas fa-qrcode me-2"></i> QR Kodu
+                </a>
+                <a href="{% url 'logout' %}" class="list-group-item list-group-item-action text-danger">
+                    <i class="fas fa-sign-out-alt me-2"></i> Çıkış Yap
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Kategoriler</h4>
+                    <a href="{% url 'catalog:category_create' %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-plus-circle me-1"></i> Yeni Kategori
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if categories %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Kategori</th>
+                                        <th>Ürün Sayısı</th>
+                                        <th>Sıra</th>
+                                        <th>İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for category in categories %}
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    {% if category.image %}
+                                                        <img src="{{ category.image.url }}" alt="{{ category.name }}" class="me-2" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">
+                                                    {% else %}
+                                                        <div class="bg-light d-flex justify-content-center align-items-center me-2" style="width: 40px; height: 40px; border-radius: 4px;">
+                                                            <i class="fas fa-tag text-muted"></i>
+                                                        </div>
+                                                    {% endif %}
+                                                    <div>
+                                                        <h6 class="mb-0">{{ category.name }}</h6>
+                                                        {% if category.description %}
+                                                            <small class="text-muted">{{ category.description|truncatechars:50 }}</small>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>{{ category.products.count }}</td>
+                                            <td>{{ category.order }}</td>
+                                            <td>
+                                                <a href="{% url 'catalog:category_update' category.id %}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="{% url 'catalog:category_delete' category.id %}" class="btn btn-sm btn-outline-danger ms-1">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                                <a href="{% url 'catalog:product_list' %}?category={{ category.id }}" class="btn btn-sm btn-outline-secondary ms-1">
+                                                    <i class="fas fa-boxes"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-tags fa-3x text-muted mb-3"></i>
+                            <h4>Henüz kategori bulunmuyor</h4>
+                            <p>Ürünlerinizi organize etmek için kategoriler oluşturun.</p>
+                            <a href="{% url 'catalog:category_create' %}" class="btn btn-primary mt-3">
+                                <i class="fas fa-plus-circle me-1"></i> İlk Kategoriyi Oluştur
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

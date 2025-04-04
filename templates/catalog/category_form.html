@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if category %}Kategori Düzenle{% else %}Yeni Kategori{% endif %} - Dijital Katalog
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="list-group shadow">
+                <a href="{% url 'dashboard' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-tachometer-alt me-2"></i> Panel
+                </a>
+                <a href="{% url 'update_profile' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-user me-2"></i> Profil
+                </a>
+                <a href="{% url 'update_company' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-building me-2"></i> Firma Bilgileri
+                </a>
+                <a href="{% url 'catalog:category_list' %}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-tags me-2"></i> Kategoriler
+                </a>
+                <a href="{% url 'catalog:product_list' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-box me-2"></i> Ürünler
+                </a>
+                <a href="{% url 'catalog:company_catalog' company.slug %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-eye me-2"></i> Kataloğu Görüntüle
+                </a>
+                <a href="{% url 'catalog:generate_qr' company.slug %}" class="list-group-item list-group-item-action" target="_blank">
+                    <i class="fas fa-qrcode me-2"></i> QR Kodu
+                </a>
+                <a href="{% url 'logout' %}" class="list-group-item list-group-item-action text-danger">
+                    <i class="fas fa-sign-out-alt me-2"></i> Çıkış Yap
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        {% if category %}
+                            Kategori Düzenle: {{ category.name }}
+                        {% else %}
+                            Yeni Kategori Oluştur
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Kategori Adı</label>
+                            <input type="text" class="form-control" id="name" name="name" required
+                                   {% if category %}value="{{ category.name }}"{% endif %}>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Açıklama</label>
+                            <textarea class="form-control" id="description" name="description" rows="3">{% if category %}{{ category.description }}{% endif %}</textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="image" class="form-label">Resim</label>
+                            <input type="file" class="form-control" id="image" name="image" accept="image/*">
+                            {% if category and category.image %}
+                                <div class="mt-2">
+                                    <img src="{{ category.image.url }}" alt="{{ category.name }}" class="img-thumbnail" style="max-height: 150px;">
+                                    <p class="small text-muted">Mevcut resim. Değiştirmek için yeni bir resim yükleyin.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="text-end">
+                            <a href="{% url 'catalog:category_list' %}" class="btn btn-secondary">İptal</a>
+                            <button type="submit" class="btn btn-primary">
+                                {% if category %}
+                                    <i class="fas fa-save me-1"></i> Değişiklikleri Kaydet
+                                {% else %}
+                                    <i class="fas fa-plus-circle me-1"></i> Kategori Oluştur
+                                {% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
