@@ -65,4 +65,4 @@ Bu Django uygulaması, firmaların ürünlerini dijital katalog olarak sergileme
 
 ## Lisans
 
-Bu proje MIT Lisansı altında lisanslanmıştır. 
+Bu proje UmutAraz Lisansı altında lisanslanmıştır. 
