@@ -1,0 +1,208 @@
+{% load catalog_extras %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ company.name }} - PDF Katalog</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .logo {
+            max-width: 150px;
+            max-height: 100px;
+        }
+        .company-name {
+            font-size: 24pt;
+            font-weight: bold;
+            color: {% if company.primary_color %}{{ company.primary_color }}{% else %}#007bff{% endif %};
+            margin: 10px 0;
+        }
+        .company-details {
+            font-size: 10pt;
+            margin-bottom: 10px;
+        }
+        .category-title {
+            font-size: 16pt;
+            font-weight: bold;
+            color: {% if company.secondary_color %}{{ company.secondary_color }}{% else %}#6c757d{% endif %};
+            margin: 20px 0 10px 0;
+            padding-bottom: 5px;
+            border-bottom: 1px solid {% if company.secondary_color %}{{ company.secondary_color }}{% else %}#6c757d{% endif %};
+        }
+        .product {
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+            border: 1px solid #eee;
+            padding: 10px;
+        }
+        .product-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .product-name {
+            font-weight: bold;
+            font-size: 12pt;
+            color: {{ company.primary_color }};
+        }
+        .product-price {
+            font-weight: bold;
+        }
+        .product-desc {
+            font-size: 9pt;
+            margin-bottom: 10px;
+            color: #666;
+        }
+        .product-img {
+            max-width: 100%;
+            height: auto;
+            max-height: 180px;
+            margin-bottom: 10px;
+        }
+        .discount-price {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .original-price {
+            text-decoration: line-through;
+            color: #888;
+            font-size: 9pt;
+        }
+        .footer {
+            text-align: center;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+            font-size: 9pt;
+            color: #888;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+        .features {
+            font-size: 9pt;
+            margin-top: 10px;
+        }
+        .feature-item {
+            margin-bottom: 3px;
+        }
+        .page-break {
+            page-break-after: always;
+        }
+        .product-container {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .product {
+            width: 45%;
+            margin-right: 5%;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        {% if company.logo %}
+            <img src="{{ company.logo.url }}" alt="{{ company.name }}" class="logo">
+        {% endif %}
+        <div class="company-name">{{ company.name }}</div>
+        {% if company.sector %}
+            <div>{{ company.sector.name }}</div>
+        {% endif %}
+        <div class="company-details">
+            {% if company.phone %}<div>{{ company.phone }}</div>{% endif %}
+            {% if company.address %}<div>{{ company.address }}</div>{% endif %}
+            {% if company.website %}<div>{{ company.website }}</div>{% endif %}
+        </div>
+        {% if company.description %}
+            <p>{{ company.description }}</p>
+        {% endif %}
+    </div>
+    
+    <div class="content">
+        {% for category_data in categories %}
+            <div class="category-section">
+                <h2 class="category-title">{{ category_data.category.name }}</h2>
+                {% if category_data.category.description %}
+                    <p>{{ category_data.category.description }}</p>
+                {% endif %}
+                
+                <div class="product-container">
+                    {% for product in category_data.products %}
+                        <div class="product">
+                            <div class="product-header">
+                                <div class="product-name">{{ product.name }}</div>
+                                {% if product.show_price and product.price %}
+                                    <div class="product-price">
+                                        {% if product.discount_price %}
+                                            <span class="discount-price">{{ product.discount_price|floatformat:2 }} TL</span>
+                                            <span class="original-price">{{ product.price|floatformat:2 }} TL</span>
+                                            {% with discount=product.price|floatformat:2|slugify|float_val %}
+                                            {% with discount_price=product.discount_price|floatformat:2|slugify|float_val %}
+                                            {% with percent=discount_price|subtractfrom:discount|divideby:discount|multiply:100 %}
+                                            <div>
+                                                <span class="badge badge-danger">{{ percent|floatformat:0 }}% indirim</span>
+                                            </div>
+                                            {% endwith %}
+                                            {% endwith %}
+                                            {% endwith %}
+                                        {% else %}
+                                            {{ product.price|floatformat:2 }} TL
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            {% for image in product.images.all %}
+                                {% if image.is_primary or forloop.first %}
+                                    <img src="{{ image.image.url }}" alt="{{ product.name }}" class="product-img">
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if product.description %}
+                                <div class="product-desc">{{ product.description }}</div>
+                            {% endif %}
+                            
+                            {% if product.feature_values.exists %}
+                                <div class="features">
+                                    <strong>Özellikler:</strong>
+                                    {% for feature in product.feature_values.all %}
+                                        <div class="feature-item">
+                                            <strong>{{ feature.feature.name }}:</strong> {{ feature.value }}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if forloop.counter|divisibleby:10 and not forloop.last %}
+                            <div class="page-break"></div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            
+            {% if not forloop.last %}
+                <div class="page-break"></div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    
+    <div class="footer">
+        {{ company.name }} - Katalog oluşturulma tarihi: {% now "d.m.Y" %}
+    </div>
+</body>
+</html> 

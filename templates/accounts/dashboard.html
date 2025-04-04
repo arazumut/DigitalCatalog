@@ -25,11 +25,17 @@
                     <a href="{% url 'catalog:product_list' %}" class="list-group-item list-group-item-action">
                         <i class="fas fa-box me-2"></i> Ürünler
                     </a>
+                    <a href="{% url 'catalog:statistics_dashboard' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-chart-bar me-2"></i> İstatistikler
+                    </a>
                     <a href="{% url 'catalog:company_catalog' company.slug %}" class="list-group-item list-group-item-action">
                         <i class="fas fa-eye me-2"></i> Kataloğu Görüntüle
                     </a>
                     <a href="{% url 'catalog:generate_qr' company.slug %}" class="list-group-item list-group-item-action" target="_blank">
                         <i class="fas fa-qrcode me-2"></i> QR Kodu
+                    </a>
+                    <a href="{% url 'catalog:generate_pdf' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-file-pdf me-2"></i> PDF Katalog
                     </a>
                 {% else %}
                     <a href="{% url 'create_company' %}" class="list-group-item list-group-item-action">

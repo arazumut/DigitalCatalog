@@ -158,3 +158,67 @@ class ProductFeatureValue(models.Model):
         verbose_name = "Ürün Özellik Değeri"
         verbose_name_plural = "Ürün Özellik Değerleri"
         unique_together = ("product", "feature")
+
+class Visitor(models.Model):
+    """Ziyaretçi bilgileri"""
+    ip_address = models.GenericIPAddressField(verbose_name="IP Adresi")
+    user_agent = models.TextField(blank=True, null=True, verbose_name="Tarayıcı Bilgisi")
+    referrer = models.URLField(blank=True, null=True, verbose_name="Referans URL")
+    first_visit = models.DateTimeField(auto_now_add=True, verbose_name="İlk Ziyaret")
+    last_visit = models.DateTimeField(auto_now=True, verbose_name="Son Ziyaret")
+    visit_count = models.PositiveIntegerField(default=1, verbose_name="Ziyaret Sayısı")
+    
+    def __str__(self):
+        return f"{self.ip_address} - {self.visit_count} ziyaret"
+    
+    class Meta:
+        verbose_name = "Ziyaretçi"
+        verbose_name_plural = "Ziyaretçiler"
+
+class CatalogVisit(models.Model):
+    """Katalog ziyareti"""
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="visits", verbose_name="Firma")
+    visitor = models.ForeignKey(Visitor, on_delete=models.CASCADE, related_name="catalog_visits", verbose_name="Ziyaretçi")
+    timestamp = models.DateTimeField(auto_now_add=True, verbose_name="Ziyaret Zamanı")
+    
+    def __str__(self):
+        return f"{self.company.name} - {self.visitor.ip_address} - {self.timestamp}"
+    
+    class Meta:
+        verbose_name = "Katalog Ziyareti"
+        verbose_name_plural = "Katalog Ziyaretleri"
+        indexes = [
+            models.Index(fields=['company', 'timestamp']),
+        ]
+
+class ProductView(models.Model):
+    """Ürün görüntüleme"""
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="views", verbose_name="Ürün")
+    visitor = models.ForeignKey(Visitor, on_delete=models.CASCADE, related_name="product_views", verbose_name="Ziyaretçi")
+    timestamp = models.DateTimeField(auto_now_add=True, verbose_name="Görüntüleme Zamanı")
+    
+    def __str__(self):
+        return f"{self.product.name} - {self.visitor.ip_address} - {self.timestamp}"
+    
+    class Meta:
+        verbose_name = "Ürün Görüntüleme"
+        verbose_name_plural = "Ürün Görüntülemeleri"
+        indexes = [
+            models.Index(fields=['product', 'timestamp']),
+        ]
+
+class CategoryView(models.Model):
+    """Kategori görüntüleme"""
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="views", verbose_name="Kategori")
+    visitor = models.ForeignKey(Visitor, on_delete=models.CASCADE, related_name="category_views", verbose_name="Ziyaretçi")
+    timestamp = models.DateTimeField(auto_now_add=True, verbose_name="Görüntüleme Zamanı")
+    
+    def __str__(self):
+        return f"{self.category.name} - {self.visitor.ip_address} - {self.timestamp}"
+    
+    class Meta:
+        verbose_name = "Kategori Görüntüleme"
+        verbose_name_plural = "Kategori Görüntülemeleri"
+        indexes = [
+            models.Index(fields=['category', 'timestamp']),
+        ]

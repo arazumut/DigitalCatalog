@@ -8,6 +8,15 @@ import qrcode
 from io import BytesIO
 from PIL import Image
 from django.core.files import File
+from .utils import track_catalog_visit, track_product_view, track_category_view
+from django.utils import timezone
+from datetime import timedelta
+import json
+from .utils import (
+    track_catalog_visit, track_product_view, track_category_view,
+    get_visitor_count, get_visit_count, get_top_products, get_top_categories,
+    get_daily_visits, get_visitor_devices, render_to_pdf, generate_catalog_pdf
+)
 
 def home_view(request):
     """Ana sayfa görünümü"""
@@ -25,15 +34,27 @@ def company_catalog_view(request, slug):
     company = get_object_or_404(Company, slug=slug)
     categories = company.categories.all()
     
+    # Ziyaret istatistiğini kaydet
+    if hasattr(request, 'visitor'):
+        track_catalog_visit(company, request.visitor)
+    
     selected_category = request.GET.get('category', None)
     if selected_category:
         category = get_object_or_404(Category, id=selected_category, company=company)
         products = category.products.all()
+        
+        # Kategori görüntüleme istatistiğini kaydet
+        if hasattr(request, 'visitor'):
+            track_category_view(category, request.visitor)
     else:
         # Varsayılan olarak ilk kategoriyi seç
         if categories.exists():
             category = categories.first()
             products = category.products.all()
+            
+            # Kategori görüntüleme istatistiğini kaydet
+            if hasattr(request, 'visitor') and category:
+                track_category_view(category, request.visitor)
         else:
             category = None
             products = []
@@ -52,6 +73,10 @@ def product_detail_view(request, slug, product_id):
     company = get_object_or_404(Company, slug=slug)
     product = get_object_or_404(Product, id=product_id, category__company=company)
     
+    # Ürün görüntüleme istatistiğini kaydet
+    if hasattr(request, 'visitor'):
+        track_product_view(product, request.visitor)
+    
     context = {
         'company': company,
         'product': product,
@@ -64,6 +89,10 @@ def search_products_view(request, slug):
     """Ürün arama görünümü"""
     company = get_object_or_404(Company, slug=slug)
     query = request.GET.get('q', '')
+    
+    # Ziyaret istatistiğini kaydet
+    if hasattr(request, 'visitor'):
+        track_catalog_visit(company, request.visitor)
     
     if query:
         products = Product.objects.filter(
@@ -394,3 +423,172 @@ def set_primary_image_view(request, image_id):
     image.save()
     
     return JsonResponse({'success': True})
+
+@login_required
+def statistics_dashboard_view(request):
+    """İstatistik gösterge paneli görünümü"""
+    if not request.user.is_authenticated:
+        return redirect('login')
+        
+    company = get_object_or_404(Company, user=request.user)
+    
+    # İstek parametreleri ve periyot ayarları
+    period = request.GET.get('period', '30')
+    days = int(period)
+    
+    # Önbellek anahtarı (cache key) 
+    cache_key = f"stats_{company.id}_{days}"
+    
+    try:
+        # Çeşitli istatistikleri hesapla
+        visitor_count = get_visitor_count(company, days)
+        visit_count = get_visit_count(company, days)
+        top_products = get_top_products(company, 5, days)
+        top_categories = get_top_categories(company, 5, days)
+        daily_visits = get_daily_visits(company, days)
+        devices = get_visitor_devices(company, days)
+        
+        # Chart.js verilerini hazırla
+        daily_labels = [str(visit['day']) for visit in daily_visits]
+        daily_data = [visit['count'] for visit in daily_visits]
+        
+        device_labels = list(devices.keys())
+        device_data = list(devices.values())
+        
+        # JSON formatına dönüştür
+        import json
+        daily_labels_json = json.dumps(daily_labels)
+        daily_data_json = json.dumps(daily_data)  
+        device_labels_json = json.dumps(device_labels)
+        device_data_json = json.dumps(device_data)
+        
+        context = {
+            'company': company,
+            'period': period,
+            'visitor_count': visitor_count,
+            'visit_count': visit_count,
+            'top_products': top_products,
+            'top_categories': top_categories,
+            'daily_visits': daily_visits,
+            'devices': devices,
+            'daily_labels_json': daily_labels_json,
+            'daily_data_json': daily_data_json,
+            'device_labels_json': device_labels_json,
+            'device_data_json': device_data_json
+        }
+    except Exception as e:
+        # Hata durumunda varsayılan değerler
+        context = {
+            'company': company,
+            'period': period,
+            'visitor_count': 0,
+            'visit_count': 0,
+            'top_products': [],
+            'top_categories': [],
+            'daily_visits': [],
+            'devices': {'mobile': 0, 'tablet': 0, 'desktop': 0, 'other': 0},
+            'daily_labels_json': '[]',
+            'daily_data_json': '[]',
+            'device_labels_json': '[]', 
+            'device_data_json': '[]',
+            'error': str(e)
+        }
+    
+    return render(request, 'catalog/statistics_dashboard.html', context)
+
+@login_required
+def statistics_api_view(request):
+    """İstatistik verileri API görünümü - AJAX istekleri için"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required'}, status=401)
+    
+    company = get_object_or_404(Company, user=request.user)
+    
+    # İstek parametreleri
+    period = request.GET.get('period', '30')
+    days = int(period)
+    
+    # Önbellek anahtarı
+    cache_key = f"stats_api_{company.id}_{days}"
+    
+    try:
+        # İstatistikleri hesapla
+        visitor_count = get_visitor_count(company, days)
+        visit_count = get_visit_count(company, days)
+        top_products = get_top_products(company, 5, days)
+        top_categories = get_top_categories(company, 5, days)
+        daily_visits = list(get_daily_visits(company, days))
+        devices = get_visitor_devices(company, days)
+        
+        data = {
+            'visitor_count': visitor_count,
+            'visit_count': visit_count,
+            'top_products': top_products,
+            'top_categories': top_categories,
+            'daily_visits': daily_visits,
+            'devices': devices
+        }
+    except Exception as e:
+        data = {
+            'error': str(e),
+            'visitor_count': 0,
+            'visit_count': 0,
+            'top_products': [],
+            'top_categories': [],
+            'daily_visits': [],
+            'devices': {'mobile': 0, 'tablet': 0, 'desktop': 0, 'other': 0}
+        }
+    
+    return JsonResponse(data)
+
+@login_required
+def generate_pdf_view(request):
+    """Kullanıcının firması için katalog PDF'i oluşturur"""
+    company = request.user.company
+    
+    if request.method == 'POST':
+        # Form verilerini işle
+        selected_categories = request.POST.getlist('categories')
+        if selected_categories:
+            selected_categories = [int(cat_id) for cat_id in selected_categories]
+            pdf = generate_catalog_pdf(company, selected_categories=selected_categories)
+        else:
+            pdf = generate_catalog_pdf(company)
+        
+        # Dosya adını hazırla
+        filename = f"{company.name.replace(' ', '_')}_katalog.pdf"
+        
+        # PDF'i indir
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response.write(pdf.content)
+        return response
+    
+    # GET isteği için form sayfasını göster
+    categories = Category.objects.filter(company=company)
+    context = {
+        'company': company,
+        'categories': categories,
+    }
+    
+    return render(request, 'catalog/generate_pdf.html', context)
+
+@login_required
+def preview_pdf_view(request):
+    """Kullanıcının firması için katalog PDF'ini önizleme olarak gösterir"""
+    company = request.user.company
+    
+    if request.method == 'POST':
+        # Form verilerini işle
+        selected_categories = request.POST.getlist('categories')
+        if selected_categories:
+            selected_categories = [int(cat_id) for cat_id in selected_categories]
+            pdf = generate_catalog_pdf(company, selected_categories=selected_categories)
+        else:
+            pdf = generate_catalog_pdf(company)
+        
+        # Tarayıcıda göster
+        return pdf
+    
+    # GET isteği için önizleme sayfasına yönlendir
+    return redirect('catalog:generate_pdf')

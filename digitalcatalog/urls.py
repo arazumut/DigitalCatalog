@@ -18,10 +18,16 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from rest_framework.documentation import include_docs_urls
+
+# Catalog API URL'lerini içe aktar
+from catalog.urls import api_urls
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
+    path('api-auth/', include('rest_framework.urls')),  # DRF auth
+    path('api/', include(api_urls)),  # API endpoint'leri
     path('', include('catalog.urls')),
 ]
 

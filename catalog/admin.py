@@ -1,7 +1,8 @@
 from django.contrib import admin
 from .models import (
     Sector, Company, Category, ProductFeature, 
-    Product, ProductImage, ProductFeatureValue
+    Product, ProductImage, ProductFeatureValue,
+    Visitor, CatalogVisit, ProductView, CategoryView
 )
 
 class ProductImageInline(admin.TabularInline):
@@ -61,3 +62,48 @@ class ProductFeatureValueAdmin(admin.ModelAdmin):
     list_display = ('product', 'feature', 'value')
     list_filter = ('feature',)
     search_fields = ('value', 'product__name', 'feature__name')
+
+@admin.register(Visitor)
+class VisitorAdmin(admin.ModelAdmin):
+    list_display = ('ip_address', 'visit_count', 'first_visit', 'last_visit')
+    list_filter = ('first_visit', 'last_visit')
+    search_fields = ('ip_address', 'user_agent')
+    readonly_fields = ('ip_address', 'user_agent', 'referrer', 'first_visit', 'last_visit', 'visit_count')
+    
+    def has_add_permission(self, request):
+        return False
+
+
+@admin.register(CatalogVisit)
+class CatalogVisitAdmin(admin.ModelAdmin):
+    list_display = ('company', 'visitor', 'timestamp')
+    list_filter = ('company', 'timestamp')
+    date_hierarchy = 'timestamp'
+    readonly_fields = ('company', 'visitor', 'timestamp')
+    
+    def has_add_permission(self, request):
+        return False
+
+
+@admin.register(ProductView)
+class ProductViewAdmin(admin.ModelAdmin):
+    list_display = ('product', 'visitor', 'timestamp')
+    list_filter = ('product__category', 'timestamp')
+    search_fields = ('product__name',)
+    date_hierarchy = 'timestamp'
+    readonly_fields = ('product', 'visitor', 'timestamp')
+    
+    def has_add_permission(self, request):
+        return False
+
+
+@admin.register(CategoryView)
+class CategoryViewAdmin(admin.ModelAdmin):
+    list_display = ('category', 'visitor', 'timestamp')
+    list_filter = ('category__company', 'timestamp')
+    search_fields = ('category__name',)
+    date_hierarchy = 'timestamp'
+    readonly_fields = ('category', 'visitor', 'timestamp')
+    
+    def has_add_permission(self, request):
+        return False

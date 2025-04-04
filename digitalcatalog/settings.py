@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     # Uygulamalar
     'catalog',
     'accounts',
+    'rest_framework',
+    'corsheaders',
     
     # Üçüncü parti paketler
     'crispy_forms',
@@ -51,11 +53,13 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'catalog.middleware.VisitorMiddleware', 
 ]
 
 ROOT_URLCONF = 'digitalcatalog.urls'
@@ -143,3 +147,37 @@ LOGOUT_REDIRECT_URL = 'catalog:home'
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap4"
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
+
+# DRF Settings
+REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': [
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+}
+
+# CORS Ayarları
+CORS_ALLOW_ALL_ORIGINS = True  # Geliştirme ortamı için tüm kaynaklara izin ver
+# Üretim ortamında belirli kaynaklara izin vermek için:
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",
+#     "https://example.com",
+# ]
+CORS_ALLOW_METHODS = [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS",
+]
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "authorization",
+    "content-type",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
